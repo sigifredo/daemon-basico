@@ -1,7 +1,7 @@
 daemon-basico
 =============
 
-Construcción básica de un demonio de GNU/Linux.
+Construcción básica de un demonio en GNU/Linux.
 
 Licencia
 --------
