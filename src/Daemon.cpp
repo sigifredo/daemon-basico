@@ -19,54 +19,59 @@
 
 Daemon::Daemon()
 {
-    pid_t pid, sid;
-    int iChdir;
-    _eEstado = Falla;
-
-    /* creamos el proceso hijo */
-    pid = fork();
-
-    if (pid >= 0)
+    if(pidExiste())
+        exit(EXIT_SUCCESS);
+    else
     {
-        /* Cuando tenemos un PID correcto podemos cerrar
-         * el proceso padre.
-         * Atención al control de errores, es una buena
-         * técnica de programación comprobar todas las
-         * situaciones donde se pueden dar errores. */
-        if (pid > 0)
-        {
-            guardarPID(pid);
-            exit(EXIT_SUCCESS);
-        }
+        pid_t pid, sid;
+        int iChdir;
+        _eEstado = Falla;
 
-        /* Cambiamos el modo de la mascara de ficheros */
-        /* Hacemos esto para que los fichero generados por el
-         * demonio sean accesibles por todo el mundo */
-        umask(0);
+        /* creamos el proceso hijo */
+        pid = fork();
 
-        /* Creamos un nuevo SID */
-        /* Esto se hace porque al haber matado al padre el hijo puede quedarse
-         * en el sistema como un proceso zombie, generando un nuevo SID hacemos
-         * que el sistema se haga cargo del proceso huérfano otorgándole un nuevo SID */
-        if (setsid() < 0)
-            perror("Falla la creación del nuevo SID.");
-        else
+        if (pid >= 0)
         {
-            /* Por seguridad, cambiamos el directorio de trabajo */
-            if (chdir("/") < 0)
-                perror("Falla en el cambio de directorio de trabajo actual.");
+            /* Cuando tenemos un PID correcto podemos cerrar
+             * el proceso padre.
+             * Atención al control de errores, es una buena
+             * técnica de programación comprobar todas las
+             * situaciones donde se pueden dar errores. */
+            if (pid > 0)
+            {
+                guardarPID(pid);
+                exit(EXIT_SUCCESS);
+            }
+
+            /* Cambiamos el modo de la mascara de ficheros */
+            /* Hacemos esto para que los fichero generados por el
+             * demonio sean accesibles por todo el mundo */
+            umask(0);
+
+            /* Creamos un nuevo SID */
+            /* Esto se hace porque al haber matado al padre el hijo puede quedarse
+             * en el sistema como un proceso zombie, generando un nuevo SID hacemos
+             * que el sistema se haga cargo del proceso huérfano otorgándole un nuevo SID */
+            if (setsid() < 0)
+                perror("Falla la creación del nuevo SID.");
             else
-                _eEstado = Activo;
-        }
+            {
+                /* Por seguridad, cambiamos el directorio de trabajo */
+                if (chdir("/") < 0)
+                    perror("Falla en el cambio de directorio de trabajo actual.");
+                else
+                    _eEstado = Activo;
+            }
 
-        /*
-         * Cerramos los descriptores standard
-         * El demonio no puede usar la terminal, por lo que estos
-         * descriptores son inútiles y un posible riesgo de seguridad.
-         */
-        close(STDIN_FILENO);
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
+            /*
+             * Cerramos los descriptores standard
+             * El demonio no puede usar la terminal, por lo que estos
+             * descriptores son inútiles y un posible riesgo de seguridad.
+             */
+            close(STDIN_FILENO);
+            close(STDOUT_FILENO);
+            close(STDERR_FILENO);
+        }
     }
 }
 
@@ -90,6 +95,20 @@ bool Daemon::escribeLog(char * str)
     {
         write(fd, str, strlen(str));
         close(fd);
+
+        return true;
+    }
+}
+
+bool Daemon::pidExiste()
+{
+    FILE * fd = fopen(ARCHIVO_PID, "r");
+
+    if(fd == NULL)
+        return false;
+    else
+    {
+        fclose(fd);
 
         return true;
     }

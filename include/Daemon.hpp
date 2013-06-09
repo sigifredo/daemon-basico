@@ -21,6 +21,13 @@ protected:
     DaemonEstado _eEstado;
 
 private:
+    /**
+     * Revisa que no exista una instancia del demonio corriendo actualmente.
+     *
+     * \return Retorna verdadero si el proceso ya existe, de lo contrario, retorna falso.
+     *
+     */
+    bool pidExiste();
     void guardarPID(const pid_t& pid);
 };
 
